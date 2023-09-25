@@ -35,9 +35,7 @@ public class Java {
         throw new IOException("No information");
     }
 
-    @Override public String toString() { return name + " " + version; }
-
-    public Java(final JavaSupport javaSupport, final File file) throws IOException, InterruptedException {
+    public Java(final File file) throws IOException, InterruptedException {
         this.file = file;
         final Process p = Runtime.getRuntime().exec(new String[] { file.getAbsolutePath(), "-version" });
         p.getOutputStream().close();
@@ -64,12 +62,21 @@ public class Java {
                     i = l.indexOf("\"");
                     if (i != -1) {
                         version = l.substring(0, i);
-                        icon = javaSupport.javaIcon;
+                        icon = JavaSupport.JAVA_ICON;
                         return;
                     }
                 }
             }
         }
         throw new IOException("No information");
+    }
+
+    @Override public String toString() { return name + " " + version; }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return obj instanceof Java ?
+                file.getAbsolutePath().equals(((Java) obj).file.getAbsolutePath()) :
+                super.equals(obj);
     }
 }

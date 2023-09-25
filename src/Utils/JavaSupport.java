@@ -3,23 +3,56 @@ package Utils;
 import Launcher.*;
 import UIL.*;
 import UIL.base.*;
+import Utils.json.Json;
+import Utils.json.JsonElement;
+import Utils.json.JsonList;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class JavaSupport extends Plugin {
-    public final String JAVA_RUN = Core.IS_WINDOWS ? "java.exe" : "java";
+    public static final String ID = "java-support", JAVA_RUN = Core.IS_WINDOWS ? "java.exe" : "java";
+    public static final IImage JAVA_ICON;
 
-    public final IImage
-            javaIcon
-    ;
+    static {
+        IImage ji = null;
+        try {
+            ji = UI.image(ID + "://images/java.png");
+        } catch (final IOException|InterruptedException ex) {
+            ex.printStackTrace();
+        }
+        JAVA_ICON = ji;
+    }
 
+    private final File config;
+
+    public final ConcurrentLinkedQueue<String> hiddenJavaList = new ConcurrentLinkedQueue<>();
     public final ConcurrentLinkedQueue<Java> javaList = new ConcurrentLinkedQueue<>();
 
     public JavaSupport(final PluginContext context) throws IOException, InterruptedException {
         super(context);
-        javaIcon = UI.image("java-support://images/java.png");
+        config = new File(context.getPluginData(), "config.json");
+        try {
+            if (config.exists() && config.isFile()) {
+                final JsonList l;
+                try (final FileInputStream is = new FileInputStream(config)) {
+                    l = Json.parse(is, false, StandardCharsets.UTF_8).getAsList();
+                }
+                for (final JsonElement e : l) {
+                    final File f = new File(e.getAsString());
+                    if (f.exists())
+                        javaList.add(new Java(f.getAbsoluteFile()));
+                    else
+                        hiddenJavaList.add(e.getAsString());
+                }
+            }
+        } catch (final IOException ex) {
+            ex.printStackTrace();
+        }
         addMenuItem(new FLMenuItemListener("java", context.getIcon(), null) {
             @Override
             public void onOpen(final FLMenuItemEvent event) {
@@ -65,6 +98,20 @@ public class JavaSupport extends Plugin {
                                         synchronized (javaList) {
                                             javaList.notifyAll();
                                         }
+                                        synchronized (config) {
+                                            if (config.exists())
+                                                config.delete();
+                                            else if (!context.getPluginData().exists())
+                                                context.getPluginData().mkdirs();
+                                            final JsonList l = new JsonList();
+                                            for (final Java j1 : javaList)
+                                                l.add(new JsonElement(FS.relative(Core.getPath(FLCore.class), j1.file)));
+                                            for (final String j1 : hiddenJavaList)
+                                                l.add(new JsonElement(j1));
+                                            try (final FileOutputStream fos = new FileOutputStream(config)) {
+                                                fos.write(l.toString().getBytes(StandardCharsets.UTF_8));
+                                            } catch (final IOException ignored) {}
+                                        }
                                     });
                                 }));
                             clb.add(UI.button(Lang.get("launcher.add"), FLCore.ICON_ADD).imageAlign(ImgAlign.TOP).imageOffset(24).onAction((s, e) -> new FLFSChooser(event.launcher, "Java") {{
@@ -78,9 +125,23 @@ public class JavaSupport extends Plugin {
                                             break;
                                         }
                                     try {
-                                        javaList.add(new Java(JavaSupport.this, f));
+                                        javaList.add(new Java(f));
                                         synchronized (javaList) {
                                             javaList.notifyAll();
+                                        }
+                                        synchronized (config) {
+                                            if (config.exists())
+                                                config.delete();
+                                            else if (!context.getPluginData().exists())
+                                                context.getPluginData().mkdirs();
+                                            final JsonList l = new JsonList();
+                                            for (final Java j : javaList)
+                                                l.add(new JsonElement(FS.relative(Core.getPath(FLCore.class), j.file)));
+                                            for (final String j : hiddenJavaList)
+                                                l.add(new JsonElement(j));
+                                            try (final FileOutputStream fos = new FileOutputStream(config)) {
+                                                fos.write(l.toString().getBytes(StandardCharsets.UTF_8));
+                                            } catch (final IOException ignored) {}
                                         }
                                     } catch (final IOException|InterruptedException ex) {
                                         ex.printStackTrace();
@@ -95,10 +156,24 @@ public class JavaSupport extends Plugin {
             }
         });
         try {
-            System.out.println(System.getProperty("java.home"));
-            javaList.add(new Java(this, new File(System.getProperty("java.home") + (Core.IS_WINDOWS ? "/bin/java.exe" : "/bin/java"))) {{
-                System.out.println(this);
-            }});
+            if (javaList.isEmpty()) {
+                javaList.add(new Java(new File(System.getProperty("java.home") + (Core.IS_WINDOWS ? "/bin/java.exe" : "/bin/java"))));
+                synchronized (config) {
+                    if (config.exists())
+                        config.delete();
+                    else if (!context.getPluginData().exists())
+                        context.getPluginData().mkdirs();
+                    final JsonList l = new JsonList();
+                    for (final Java j1 : javaList)
+                        l.add(new JsonElement(FS.relative(Core.getPath(FLCore.class), j1.file)));
+                    for (final String j1 : hiddenJavaList)
+                        l.add(new JsonElement(j1));
+                    try (final FileOutputStream fos = new FileOutputStream(config)) {
+                        fos.write(l.toString().getBytes(StandardCharsets.UTF_8));
+                    } catch (final IOException ignored) {
+                    }
+                }
+            }
         } catch (final Exception ex) {
             ex.printStackTrace();
             ex.fillInStackTrace();
