@@ -5,7 +5,7 @@ import UIL.base.IImage;
 import java.io.*;
 import java.util.Scanner;
 
-public class Java {
+public class Java implements IImage {
     public final IImage icon;
     public final File file;
     public final String name, version;
@@ -71,6 +71,7 @@ public class Java {
         throw new IOException("No information");
     }
 
+    @Override public Object getImage() { return icon == null ? null : icon.getImage(); }
     @Override public String toString() { return name + " " + version; }
 
     @Override
