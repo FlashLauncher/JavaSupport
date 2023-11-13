@@ -45,7 +45,7 @@ public class JavaSupport extends Plugin {
                 for (final JsonElement e : l) {
                     final File f = new File(e.getAsString());
                     if (f.exists())
-                        javaList.add(new Java(f.getAbsoluteFile()));
+                        javaList.add(new Java(f.getCanonicalFile()));
                     else
                         hiddenJavaList.add(e.getAsString());
                 }
@@ -170,8 +170,7 @@ public class JavaSupport extends Plugin {
                         l.add(new JsonElement(j1));
                     try (final FileOutputStream fos = new FileOutputStream(config)) {
                         fos.write(l.toString().getBytes(StandardCharsets.UTF_8));
-                    } catch (final IOException ignored) {
-                    }
+                    } catch (final IOException ignored) {}
                 }
             }
         } catch (final Exception ex) {
