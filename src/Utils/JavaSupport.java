@@ -73,7 +73,7 @@ public class JavaSupport extends Plugin {
                                     Core.offNotifyLoop(u);
                                     final IButton del = UI.button(Lang.get("launcher.remove")).size(event.width() - 16, 32).pos(8, 48);
                                     final IContainer c = UI.panel().size(event.width(), 88).pos(0, 56)
-                                            .add(UI.text(j.file).ha(HAlign.LEFT).size(del.width(), 32).pos(8, 8), del);
+                                            .add(UI.text(j.file).ha(HAlign.LEFT).size(del.width() - 8, 32).pos(16, 8), del);
                                     final IButton back = UI.button("<").size(32, 32).pos(8, 8);
 
                                     t.text("Javas > " + j);
