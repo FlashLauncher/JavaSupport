@@ -112,6 +112,7 @@ public class JavaSupport extends Plugin {
                                                 fos.write(l.toString().getBytes(StandardCharsets.UTF_8));
                                             } catch (final IOException ignored) {}
                                         }
+                                        close.run();
                                     });
                                 }));
                             clb.add(UI.button(Lang.get("launcher.add"), FLCore.ICON_ADD).imageAlign(ImgAlign.TOP).imageOffset(24).onAction((s, e) -> new FLFSChooser(event.launcher, "Java") {{
