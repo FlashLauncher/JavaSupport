@@ -39,8 +39,22 @@ public class Java implements IImage {
         this.file = file;
         final Process p = Runtime.getRuntime().exec(new String[] { file.getAbsolutePath(), "-version" });
         p.getOutputStream().close();
-        if (p.waitFor() != 0)
+        if (p.waitFor() != 0) {
+            System.out.println(file);
+            try (final Scanner s = new Scanner(p.getInputStream())) {
+                while (s.hasNextLine())
+                    System.out.println(s.nextLine());
+            } catch (final Exception ex) {
+                ex.printStackTrace();
+            }
+            try (final Scanner s = new Scanner(p.getErrorStream())) {
+                while (s.hasNextLine())
+                    System.out.println(s.nextLine());
+            } catch (final Exception ex) {
+                ex.printStackTrace();
+            }
             throw new IOException("Exit code: " + p.exitValue());
+        }
         try (final Scanner r = new Scanner(p.getErrorStream(), "UTF-8")) {
             if (r.hasNextLine()) {
                 String l = r.nextLine();
